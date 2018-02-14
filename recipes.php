@@ -1,133 +1,115 @@
-<html>
-<body>
 <?php
-$name = $pw = $db = "";
-$recipe = $site = "";
-$ings = $dirs = "";
-
-if ($_SERVER["REQUEST_METHOD"] == "POST") {
-  $name = test_input($_POST["name"]);
-  $pw = test_input($_POST["pw"]);
-  $db = test_input($_POST["db"]);
-  $recipe = test_input($_POST["recipe"]);
-  $site = test_input($_POST["site"]);
-  $dirs = test_input($_POST["dirs"]);
-  $ings = test_input($_POST["ings"]);
-}
-
-function test_input($data) {
-  $data = trim($data);
-  $data = stripslashes($data);
-  $data = htmlspecialchars($data);
-  return $data;
-}
+  session_start();
+  require_once('database.php');
+  $config = array("user"=>$_SESSION['username'],
+                  "pw"=>$_SESSION['pword'],
+                  "db"=>$_SESSION['database']);
+  $db = new Database($config);
 
 // Check for duplicate recipe name in Recipe table.
 // If duplicate, rename random value and check again.
 // Add to table once it is unique.
-$sql = "SELECT name FROM Recipe WHERE name = '$recipe'";
-while (readFromSQL($sql, 1) === true) {
-  echo "$recipe already exists ";
-  $recipe = "$recipe ".mt_rand();
-  echo "renaming to $recipe<br>";
-  $sql = "SELECT name FROM Recipe WHERE name = '$recipe'";
+$recipe = $_SESSION['recipename'];
+$directions = $_SESSION['directions'];
+$site = $_SESSION['site'];
+
+$sql = "SELECT COUNT(*) AS count FROM Recipe WHERE name LIKE '${recipe}%'";
+
+$x = $db->SelectDatabase_($sql);
+$count = $x[0]['count'];
+if ($count > 0) {
+  $recipe .= " ".($count + 1);
 }
-$sql = "INSERT INTO Recipe (name, instructions, website) VALUES ('$recipe', '$dirs', '$site')";
-writeToSql($sql);
+$sql = "INSERT INTO Recipe (name, instructions, website) VALUES ('$recipe', '$directions', '$site')";
+$db->QueryDatabase_($sql);
+
 
 // Store ingredients in Ingredient table.
 // Store associated amounts in RecipeIngredient table with keys
 // that point to Recipe and Ingredient tables.
 // Do not add to Ingredient table if duplicates.
 // Ingredients in the form of <number> <measurement> <ingredient>
-$ingRegex = "~([0-9/.]+ [a-z-]*) ([ a-z-]+)~i";
-//$ingUnused = storeIngredients(explode(",", $ings), $ingRegex);
-$ingUnused = storeIngredients(preg_split("~[\n,]~", $ings), $ingRegex);
-// Ingredients in the form of <number> <ingredient>
-$ingRegex = "~([0-9/.]+) ([ a-z-]+)~i";
-$ingUnused = storeIngredients($ingUnused, $ingRegex);
 
-if (!empty($ingUnused)) {
-  echo "Could not store:<br>";
-  foreach($ingUnused as $a) {
-    if (preg_match("~[a-z0-9]~i", $a)) echo "$a<br>";
-  }
+// Grab measurements from database
+// Add measurements from previous page
+// Insert into regular expression to divide values
+
+echo "Grabbing measurements<br>";
+$measRegex = "/".$_POST['newMeas']."/";
+echo "${measRegex}<br>";
+echo "<br><br><br>";
+print_r($_POST['myIngs']);
+echo "<br><br><br>";
+foreach ($_POST['myIngs'] as $x) {
+  echo "$x<br>";
+  preg_match($measRegex, $x, $matches);
+  print_r($matches);
+  storeToDB($matches[1], $matches[2], $matches[3]);
 }
 
-//$sql = "SELECT r.name AS 'Recipe', i.name AS 'Ingredient', ri.measurement AS 'Measure' ";
-//$sql .= "FROM Recipe r JOIN RecipeIngredient ri on r.id = ri.recipe_id JOIN Ingredient i on i.id = ri.ingredient_id ";
-//$sql .= "WHERE r.name = '$recipe' ";
-//$sql .= "ORDER BY r.name";
-$sql = "SELECT ri.measurement AS 'Measure', i.name AS 'Ingredient' ";
-$sql .= "FROM Recipe r JOIN RecipeIngredient ri on r.id = ri.recipe_id JOIN Ingredient i on i.id = ri.ingredient_id ";
-$sql .= "WHERE r.name = '$recipe' ";
-//echo "$sql<br>";
-echo "<h2>$recipe</h2>";
-readFromSQL($sql);
-
-function storeIngredients($ingExplode, $regex) {
-  global $name, $pw, $db, $sql, $recipe;
-  $unused = [];
-  foreach($ingExplode as $x) {
-    preg_match($regex, $x, $m);
-    if (empty($m)) {
-      array_push($unused, $x);
-    } else {
-      $sql = "SELECT name FROM Ingredient WHERE name = '$m[2]'";
-      if (readFromSQL($sql, 1) === true) {
-        //echo "Skipping adding ingredient $m[2] because it exists<br>";
-      } else {
-        $sql = "INSERT INTO Ingredient (name) VALUES ('$m[2]')";
-        writeToSql($sql);
-      }
-      $sql = "INSERT INTO RecipeIngredient (recipe_id, ingredient_id, measurement) ";
-      $sql .= "SELECT r.id, i.id, '$m[1]' FROM Recipe r JOIN Ingredient i WHERE r.name = '$recipe' AND i.name = '$m[2]'";
-      writeToSql($sql);
-    }
-  }
-  return $unused;
+echo "<h1>$site</h1>";
+echo "<h2><a href='$site'>$recipe</a></h2>";
+$sql = "SELECT FORMAT(ri.amount,3) AS 'A', m.name AS 'M', i.name AS 'I'";
+$sql .= " FROM Recipe r JOIN RecipeIngredient ri on r.id = ri.recipe_id ";
+$sql .= " JOIN Ingredient i on i.id = ri.ingredient_id LEFT OUTER JOIN Measure m on m.id = ri.measure_id";
+$sql .= " WHERE r.name = '$recipe'";
+$lines = $db->SelectDatabase_($sql);
+foreach ($lines as $l) {
+  echo "<p>".$l['A']." ".$l['M']." ".$l['I']."</p>";
 }
+echo "<p>$directions<p>";
+echo "<a href='http://www.unawarewolf.com/test/'>Enter new recipe!</a>";
 
-function writeToSql($sql) {
-  global $name, $pw, $db;
-  $conn = new mysqli("localhost", $name, $pw, $db);
-  if ($conn->connect_error) {
-    die("Connection failed: " . $conn->connect_error);
+function storeToDB($amount, $meas, $ing) {
+
+  global $recipe, $db;
+
+  // Convert amount to decimal
+  // if: Contains whole number and fraction (1 1/4)
+  // else if: Contains just fraction (1/4)
+  if (preg_match('/[ ]/', $amount)) {
+    $a = explode(" ", $amount);    // Grab whole numbers
+    $b = explode("/", $a[1]);      // Grab fractions
+    $amount = $a[0] + $b[0]/$b[1]; // Calculate total
+  } else if (preg_match('/[\/]/', $amount)) {
+    $b = explode("/", $amount); // Grab fractions
+    $amount = $b[0]/$b[1];      // Calculate
   }
-  if ($conn->query($sql) === TRUE) {
-    //echo "Record updated successfully<br>";
+
+  $sql = "SELECT name FROM Ingredient WHERE name = '$ing'";
+  if (mysqli_num_rows($db->QueryDatabase_($sql)) > 0) {
+    echo "Skipping adding ingredient <strong>$ing</strong> because it exists<br>";
   } else {
-    echo "Error updating record: " . $conn->error;
+    $sql = "INSERT INTO Ingredient (name) VALUES ('$ing')";
+    echo "Storing ingredient <strong>$ing</strong><br>";
+    echo $sql;
+    $db->QueryDatabase_($sql);
   }
-  $conn->close();
+
+  if ($meas == '') {
+    echo "$ing has no meas<br>";
+    $sql = "INSERT INTO RecipeIngredient (recipe_id, ingredient_id, measure_id, amount) ";
+    $sql .= "SELECT r.id, i.id, NULL, '$amount' FROM Recipe r";
+    $sql .= " JOIN Ingredient i";
+    $sql .= " WHERE r.name = '$recipe' AND i.name = '$ing'";
+    echo $sql;
+    $db->QueryDatabase_($sql);
+  } else {
+    $sql = "SELECT name FROM Measure WHERE name = '$meas'";
+    if (mysqli_num_rows($db->QueryDatabase_($sql)) > 0) {
+      echo "Skipping adding measurement <strong>$meas</strong> because it exists<br>";
+    } else {
+      $sql = "INSERT INTO Measure (name) VALUES ('$meas')";
+      echo $sql."<br>";
+      $db->QueryDatabase_($sql);
+    }
+    $sql = "INSERT INTO RecipeIngredient (recipe_id, ingredient_id, measure_id, amount) ";
+    $sql .= "SELECT r.id, i.id, m.id, '$amount' FROM Recipe r";
+    $sql .= " JOIN Ingredient i JOIN Measure m";
+    $sql .= " WHERE r.name = '$recipe' AND i.name = '$ing' AND m.name='$meas'";
+    echo $sql;
+    $db->QueryDatabase_($sql);
+  }
 }
 
-function readFromSQL ($sql, $checkDup = 0) {
-  global $name, $pw, $db;
-  $conn = new mysqli("localhost", $name, $pw, $db);
-  if ($conn->connect_error) {
-    die("Connection failed: " . $conn->connect_error);
-  }
-  $result = $conn->query($sql);
-  if ($result->num_rows > 0) {
-    if ($checkDup) {
-      $conn->close();
-      //echo "Value already exists within database.<br>$sql<br>";
-      return true;
-    }
-    // output data of each row
-    while($row = $result->fetch_assoc()) {
-      //echo "id: " . $row["id"]. " - Name: " . $row["firstname"]. " " . $row["lastname"]. "<br>";
-      //echo "Reading from db<br>";
-      //var_dump($row);
-      //echo "<br>";
-      echo "<h5>".$row['Measure']." ".$row['Ingredient']."</h5>";
-    }
-  }
-  $conn->close();
-}
 ?>
-<br><br><br>
-
-</body>
-</html>

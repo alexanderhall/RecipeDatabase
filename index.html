@@ -1,45 +1,27 @@
 <html>
-  <style>
-    .center {
-      margin: auto;
-      width: 50%;
-    }
-    form {
-      margin-bottom: 0;
-    }
-    input {
-      width: 100%;
-      padding: 12px 20px;
-      margin: 8px 0;
-      border: 1px solid;
-      border-radius: 4px;
-    }
-    textarea {
-      width: 100%;
-      padding: 12px 20px;
-      margin: 8px 0;
-      border: 1px solid;
-      border-radius: 4px;
-    }
-    input[type=submit] {
-      background-color: darkseagreen;
-      color: white;
-      border-color: seagreen;
-      cursor: pointer;
-    }
-  </style>
+  <head>
+    <link rel="stylesheet" href="style.css">
+  </head>
   <body>
     <div class="center">
-    <form action="recipes.php" method="post" id="recipeform">
-      <input type="text" name="name" placeholder="Username"><br>
-      <input type="password" name="pw" placeholder="Password"><br>
-      <input type="text" name="db" placeholder="Database"><br>
-      <input type="text" name="recipe" placeholder="Recipe Name" required><br>
-      <input type="text" name="site" placeholder="Website"><br>
+<!--    
+      <form action="recipes.php" method="post" id="recipeform"> 
+-->
+<!--
+      <form action="input.php" method="post" id="recipeform">
+-->
+    
+      <form action="new.php" method="post" id="recipeform">
+      <input type="text" name="name" placeholder="Username">
+      <input type="password" name="pw" placeholder="Password">
+      <input type="text" name="db" placeholder="Database">
+      <input type="text" name="recipe" placeholder="Recipe Name">
+      <input type="text" name="site" placeholder="Website">
     </form>
-    <textarea name="ings" rows="5" placeholder="Ingredients (separated by comma or new line)&#10;3 cups flour&#10;2 eggs&#10;..." form="recipeform" required></textarea>
+    <textarea name="ings" rows="5" placeholder="Ingredients (separated by comma or new line)&#10;3 cups flour&#10;2 eggs&#10;..." form="recipeform"></textarea>
     <textarea name="dirs" rows="10" placeholder="Recipe Directions" form="recipeform"></textarea>
-    <input type="submit" form="recipeform">
+    <input type="submit" form="recipeform" name='submit'>
     </div>
   </body>
 </html>
+
