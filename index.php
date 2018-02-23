@@ -4,6 +4,7 @@
   </head>
   <body>
     <div class="center">
+    <h1>Recipe Database</h1>
     <form action="checking.php" method="post" id="recipeform">
       <input type="text" name="username" placeholder="Username" value="testuser">
       <input type="password" name="pword" placeholder="Password">
