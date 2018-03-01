@@ -28,7 +28,7 @@ echo "<h2><a href='$site'>$recipe</a></h2>";
     $sql = "SELECT name FROM Recipe WHERE id = ".$i['id'];
     $a = $db->SelectDatabase_($sql)[0]['name'];
     $site = str_replace(" ", "+", $a);
-    $b .= "<p><a href=https://www.unawarewolf.com/test/showrecipe.php?recipe=$site>$a</a></p>";
+    $b .= "<p><a href=http://www.unawarewolf.com/RecipeDatabase/showrecipe.php?recipe=$site>$a</a></p>";
   }
   $ids .= $result[0]['id'].", ";
   $ids .= $result[1]['id'].", ";
