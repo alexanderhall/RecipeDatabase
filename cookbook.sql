@@ -4,6 +4,7 @@
 #-- login:            $ mysql -u root --password=wxyz
 #-- run the script:   mysql> source /Users/javapro/dev/src/sql/Cookbook.sql
 #-- the script: 
+# -- A.J. is awesome. - T. Hall (2019)
 
 drop database if exists Cookbook;
 
