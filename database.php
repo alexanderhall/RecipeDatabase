@@ -52,18 +52,4 @@ class Database {
   }
 }
 
-//$db = new Database(parse_ini_file('../../config.ini'));
-//$answer = array();
-//$sql = "SELECT name FROM Recipe WHERE id IN (1,2)";
-//$answer = $db->SelectDatabase_($sql);
-//$db->SelectDatabase_($sql);
-
-//foreach ($answer as $x) {
-  //echo $x['name']."\n";
-//}
-
-//$sql = "INSERT INTO Recipe (name) VALUES ('Lemon Cake ".rand()."')";
-//echo $sql."\n";
-//$db->QueryDatabase_($sql);
-
 ?>

@@ -58,7 +58,7 @@ foreach ($lines as $l) {
   echo "<p>".$l['A']." ".$l['M']." ".$l['I']."</p>";
 }
 echo "<p>$directions<p>";
-echo "<a href='http://www.unawarewolf.com/test/'>Enter new recipe!</a>";
+echo "<a href='http://www.unawarewolf.com/RecipeDatabase/'>Enter new recipe!</a>";
 
 function storeToDB($amount, $meas, $ing) {
 

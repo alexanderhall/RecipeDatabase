@@ -52,7 +52,7 @@ JOIN Measure m
 WHERE r.name = 'Lemon Cake' AND i.name = "flour" AND m.name="cups";
 */
 -- Initialize with scrambled egg recipe.
-INSERT INTO Recipe (name, instructions) 
+/*INSERT INTO Recipe (name, instructions) 
 VALUES ('INIT Scrambled Eggs','Beat eggs together.Cook on low heat until done.');
 INSERT INTO Ingredient (name) VALUES ('eggs');
 INSERT INTO RecipeIngredient (recipe_id, ingredient_id, measure_id, amount) 
@@ -69,7 +69,7 @@ FROM Recipe r
 JOIN Ingredient i
 JOIN Measure m
 WHERE r.name = 'INIT Scrambled Eggs' AND i.name = 'salt' AND m.name='tsp';
-
+*/
 SELECT r.name AS 'Recipe', 
 ri.amount AS 'Amount', 
 m.name AS 'Measure', 
